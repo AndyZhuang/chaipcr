@@ -1,4 +1,3 @@
-
 #!/bin/sh
 #
 # Chai PCR - Software platform for Open qPCR and Chai's Real-Time PCR instruments.
@@ -19,7 +18,7 @@
 # limitations under the License.
 #
 
-#exit
+#exit 0
 
 id | grep -q root
 is_root=$?
@@ -31,16 +30,16 @@ then
 	exit
 fi
 
-if [ -e /dev/mmcblk0p4 ]
+if [ -e /dev/mmcblk0p3 ]
 then
         eMMC=/dev/mmcblk0
 	sdcard_dev=/dev/mmcblk1p1
-elif [ -e /dev/mmcblk1p4 ]
+elif [ -e /dev/mmcblk1p3 ]
 then
        	eMMC=/dev/mmcblk1
 	sdcard_dev=/dev/mmcblk0p1
 else
-       	echo "4 partitions eMMC not found!"
+       	echo "3 partitions eMMC not found!"
 	echo default-on > /sys/class/leds/beaglebone\:green\:usr1/trigger
 
 	eMMC=/dev/mmcblk1
@@ -48,21 +47,23 @@ else
 fi
 
 sync
+script=$(readlink -f "$0")
+bin_dir=$(dirname $script)
+echo Executing from: $bin_dir
+mount -t tmpfs tmpfs /tmp
 
-if [ ! -e /sdcard ]
+if [ ! -e /tmp/sdcard ]
 then
-	mkdir /sdcard
+	mkdir -p /tmp/sdcard
 fi
 
-if [ ! -e /emmcboot ]
+if [ ! -e /tmp/emmcboot ]
 then
-	mkdir /emmcboot
+	mkdir -p /tmp/emmcboot
 fi
 
-umount /sdcard > /dev/null || true
-mount $sdcard_dev /sdcard -t vfat || true
-
-sdcard="/sdcard"
+sdcard="/tmp/sdcard"
+mount $sdcard_dev $sdcard || true
 
 flush_cache () {
 	sync
@@ -74,8 +75,6 @@ flush_cache_mounted () {
 }
 
 alldone () {
-
-
 	if [ -e /sys/class/leds/beaglebone\:green\:usr0/trigger ] ; then
 		echo default-on > /sys/class/leds/beaglebone\:green\:usr0/trigger
 		echo default-on > /sys/class/leds/beaglebone\:green\:usr1/trigger
@@ -89,6 +88,7 @@ alldone () {
 	sync
 
 	reboot
+	exit 0
 }
 
 flush_cache () {
@@ -140,24 +140,24 @@ then
 	echo "Resume eMMC packing flag found up"
 	incriment_restart_counter
 
-	if [ "$counter" -ge 5 ] 
+	if [ "$counter" -ge 5 ]
 	then
 		echo Restart counter exceeded 4.. quitting packing operation
 		stop_packing_restarting
 		echo Rebooting
-#		exit 0
 		reboot
+		exit 0
 	fi
 
 	echo "Resuming eMMC packing"
 
-	sh /sdcard/pack_latest_version.sh || true
+	sh $bin_dir/pack_latest_version.sh || true
 	result=$?
 	if [ $result -eq 1 ]
 	then
 		echo Error packing eMMC, restarting...
-#		exit 0
 		reboot
+		exit 0
 	fi
 
 	update_uenv
@@ -169,9 +169,9 @@ fi
 #if [ ! -e ${sdcard}/factory_settings.img.gz ]
 #then
 	echo "Creating factory settings images! Copying from eMMC at $eMMC to sdcard at $sdcard_dev!"
-	sh /sdcard/pack_latest_Version.sh || true
+	sh $bin_dir/pack_latest_version.sh || true
 	sync
-	echo Creating factory settings image done.. Now creating upgrade image. 	
+#	echo Creating factory settings image done.. Now creating upgrade image. 	
 	echo timer > /sys/class/leds/beaglebone\:green\:usr1/trigger
 	alldone
 	exit 0
@@ -180,7 +180,7 @@ fi
 echo "eMMC Grabber: all done!"
 sync
 sleep 5
-umount /sdcard > /dev/null || true 
+umount /tmp/sdcard > /dev/null || true
 
 alldone
 
