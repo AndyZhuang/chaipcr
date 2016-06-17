@@ -117,7 +117,7 @@ check_eeprom () {
 			eeprom_header=$(hexdump -e '8/1 "%c"' ${eeprom} -n 8 | cut -b 6-8)
 			if [ "x${eeprom_header}" = "x335" ] ; then
 				message="Valid ${device_eeprom} header found [${eeprom_header}]" ; broadcast
-				message="-----------------------------" ; broadcast
+			message="-----------------------------" ; broadcast
 			else
 				message="Invalid EEPROM header detected" ; broadcast
 				if [ -f /opt/scripts/device/bone/${device_eeprom}.dump ] ; then
@@ -292,9 +292,13 @@ format_root () {
 
 format_single_root () {
 	message="mkfs.ext4 ${destination}p1 -L ${boot_label}" ; broadcast
-	echo "-----------------------------"
-	mkfs.ext4 ${destination}p1 -L ${boot_label}
-	echo "-----------------------------"
+	echo "----------------------------- p1"
+        mkfs.ext4 ${destination}p1 -L ${boot_label}
+        echo "----------------------------- p2"
+        mkfs.ext4 ${destination}p2 -L data
+        echo "----------------------------- p3"
+        mkfs.ext4 ${destination}p3 -L perm
+        echo "-----------------------------"
 	flush_cache
 }
 
@@ -336,7 +340,7 @@ copy_rootfs () {
 	if [ ! "x${rsync_progress}" = "x" ] ; then
 		echo "rsync: note the % column is useless..."
 	fi
-	rsync -aAx ${rsync_progress} /* /tmp/rootfs/ --exclude={/sdcard/*,/dev/*,/proc/*,/sys/*,/tmp/*,/run/*,/mnt/*,/media/*,/lost+found,/lib/modules/*,/uEnv.txt} || write_failure
+	rsync -aAx ${rsync_progress} /* /tmp/rootfs/ --exclude={eMMC.img,/sdcard/*,/dev/*,/proc/*,/sys/*,/tmp/*,/run/*,/mnt/*,/media/*,/lost+found,/lib/modules/*,/uEnv.txt} || write_failure
 	flush_cache
 
 	if [ -d /tmp/rootfs/etc/ssh/ ] ; then
@@ -345,8 +349,10 @@ copy_rootfs () {
 		flush_cache
 	fi
 
-	mkdir -p /tmp/rootfs/lib/modules/$(uname -r)/ || true
+	mkdir -p /tmp/rootfs/data/ || true
+ 	mkdir -p /tmp/rootfs/perm/ || true
 
+ 	mkdir -p /tmp/rootfs/lib/modules/$(uname -r)/ || true
 	message="Copying: Kernel modules" ; broadcast
 	message="rsync: /lib/modules/$(uname -r)/ -> /tmp/rootfs/lib/modules/$(uname -r)/" ; broadcast
 	if [ ! "x${rsync_progress}" = "x" ] ; then
