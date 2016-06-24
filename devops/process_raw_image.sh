@@ -26,11 +26,11 @@ fi
 temp="/tmp/image_creator"
 eMMC=/dev/md2
 
-boot_partition=${eMMC}p1
-rootfs_partition=${eMMC}p2
+#boot_partition=${eMMC}p1
+rootfs_partition=${eMMC}p1
 
-data_partition=${eMMC}p3
-perm_partition=${eMMC}p4
+data_partition=${eMMC}p2
+perm_partition=${eMMC}p3
 
 #tooling
 loopdev=/dev/loop2
@@ -111,10 +111,10 @@ if [ -z $1 ]
 then
 	sdcard=$current_folder
 
-	if [ -e ${current_folder}/eMMC_part1.img ]
+	if [ -e ${current_folder}/eMMC.img ]
 	then
 		sdcard=$current_folder
-	elif [ -e ${BASEDIR}/eMMC_part1.img ]
+	elif [ -e ${BASEDIR}/eMMC.img ]
         then
                 sdcard=$BASEDIR
 	fi
@@ -168,8 +168,8 @@ cp -r $BASEDIR/factory_settings_sdcard/* $output_dir/p1
 cp $BASEDIR/factory_settings_sdcard/scripts/* $output_dir/p2/scripts/
 
 image_filename_upgrade="${temp}/eMMC.img"
-image_filename_upgrade1="$sdcard/eMMC_part1.img"
-image_filename_upgrade2="$sdcard/eMMC_part2.img"
+image_filename_upgrade_in="$sdcard/eMMC.img"
+#image_filename_upgrade2="$sdcard/eMMC_part2.img"
 upgrade_scripts="scripts"
 
 echo "Packing eMMC image.."
@@ -184,15 +184,15 @@ fi
 
 cp $BASEDIR/factory_settings_sdcard/scripts/* $temp/$upgrade_scripts
 
-if [ ! -e $image_filename_upgrade1 ]
-then
-	echo "First image part not found: $image_filename_upgrade1"
-	exit 1
-fi
+#if [ ! -e $image_filename_upgrade1 ]
+#then
+#	echo "First image part not found: $image_filename_upgrade1"
+#	exit 1
+#fi
 
-if [ ! -e $image_filename_upgrade2 ]
+if [ ! -e $image_filename_upgrade_in ]
 then
-	echo "Second image part not found: $image_filename_upgrade2"
+	echo "eMMC image not found: $image_filename_upgrade_in"
 	exit 1
 fi
 
@@ -217,11 +217,11 @@ unmount_all () {
 	fi
 }
 
-echo "Concatinating eMMC image parts"
-cat $image_filename_upgrade1 $image_filename_upgrade2 > $image_filename_upgrade
+#echo "Concatinating eMMC image parts"
+cp $image_filename_upgrade_in $image_filename_upgrade
 if [ $? -gt 0 ]
 then
-	echo "Error concatinating image parts!"
+	echo "Error copying image parts!"
 	unmount_all
 	exit 1
 fi
@@ -247,10 +247,10 @@ then
                         exit 1
                 fi
                 eMMC=$devname
-                boot_partition=${eMMC}s1
-                rootfs_partition=${eMMC}s2
-                data_partition=${eMMC}s3
-                perm_partition=${eMMC}s4
+                #boot_partition=${eMMC}s1
+                rootfs_partition=${eMMC}s1
+                data_partition=${eMMC}s2
+                perm_partition=${eMMC}s3
         fi
 else
         loopdev=/dev/loop2
@@ -277,7 +277,7 @@ image_filename_folder="${temp}"
 image_filename_prfx="upgrade"
 image_filename_rootfs="$image_filename_prfx-rootfs.img.gz"
 image_filename_data="$image_filename_prfx-data.img.gz"
-image_filename_boot="$image_filename_prfx-boot.img.gz"
+#image_filename_boot="$image_filename_prfx-boot.img.gz"
 image_filename_perm="$image_filename_prfx-perm.img.gz"
 
 image_filename_pt="$image_filename_prfx-pt.img.gz"
@@ -382,9 +382,9 @@ $mkfsext4tooldir $perm_partition -q -L perm -F -F
 dd  if=$perm_partition bs=16777216 | gzip -c > $image_filename_perm
 $mdsumtool $image_filename_perm>>$checksums_filename
 
-echo "Packing boot partition to: $image_filename_boot"
-dd  if=$boot_partition bs=16777216 | gzip -c > $image_filename_boot
-$mdsumtool $image_filename_boot>>$checksums_filename
+#echo "Packing boot partition to: $image_filename_boot"
+#dd  if=$boot_partition bs=16777216 | gzip -c > $image_filename_boot
+#$mdsumtool $image_filename_boot>>$checksums_filename
 
 #create scripts folder inside the tar
 if [ ! -e $upgrade_scripts ]
@@ -426,7 +426,7 @@ retval=$?
 
 	#tarring
 #	echo "compressing all images to $image_filename_upgrade_tar_temp"
-	tar -cvf $image_filename_upgrade_temp $image_filename_pt $image_filename_boot $image_filename_data $image_filename_rootfs  $image_filename_perm $checksums_filename
+	tar -cvf $image_filename_upgrade_temp $image_filename_pt $image_filename_data $image_filename_rootfs  $image_filename_perm $checksums_filename
 
 
 	if [ -e $image_filename_data ]
@@ -447,15 +447,15 @@ then
 	rm $image_filename_upgrade_temp
 fi
 
-tar -cvf $image_filename_upgrade_temp $image_filename_pt $image_filename_boot $image_filename_rootfs $image_filename_perm $checksums_filename $upgrade_scripts
+tar -cvf $image_filename_upgrade_temp $image_filename_pt $image_filename_rootfs $image_filename_perm $checksums_filename $upgrade_scripts
 
 echo "Remove packed files"
-if [ -e $image_filename_boot ]
-then
-	rm $image_filename_boot
-else
-       	echo "Boot image not found: $image_filename_boot"
-fi
+#if [ -e $image_filename_boot ]
+#then
+#	rm $image_filename_boot
+#else
+ #      	echo "Boot image not found: $image_filename_boot"
+#fi
 
 if [ -e $image_filename_rootfs ]
 then

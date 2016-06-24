@@ -117,7 +117,7 @@ fi
 
 if [ -z $2 ]
 then
-	echo "Block device not entered."
+	echo "Block device dose not exist."
 	print_usage_exit
 fi
 
@@ -128,6 +128,49 @@ then
 fi
 
 output_device=$2
+
+unmount_all_debug() {
+	for n in ${output_device}* ; do echo Unmounting $n ; umount $n ; done
+}
+unmount_all() {
+	unmount_all_debug > /dev/null 2>&1 || true
+}
+
+single_partition_expand() {
+        echo "${output_device}p1" > /resizerootfs
+        conf_boot_startmb=${conf_boot_startmb:-"1"}
+        sfdisk_fstype=${sfdisk_fstype:-"L"}
+        if [ "x${sfdisk_fstype}" = "x0x83" ] ; then
+                sfdisk_fstype="L"
+        fi
+
+        sfdisk_options="--force --no-reread --Linux --in-order --unit M"
+        test_sfdisk=$(LC_ALL=C sfdisk --help | grep -m 1 -e "--in-order" || true )
+        if [ "x${test_sfdisk}" = "x" ] ; then
+                echo "sfdisk: 2.26.x or greater"
+                sfdisk_options="--force --no-reread"
+                conf_boot_startmb="${conf_boot_startmb}M"
+        fi
+
+  #      echo "LC_ALL=C sfdisk ${sfdisk_options} ${output_device} <<-__EOF__
+   #             ${conf_boot_startmb},,${sfdisk_fstype},*
+    #    __EOF__"
+
+       LC_ALL=C sfdisk --force -uS --Linux "${output_device}" <<-__EOF__
+                ${conf_boot_startmb},,${sfdisk_fstype},*
+	__EOF__
+        blockdev  --rereadpt "${output_device}"
+	unmount_all
+
+}
+
+flush_cache () {
+        sync
+        blockdev --flushbufs "${output_device}"
+	unmount_all
+	blockdev  --rereadpt "${output_device}"
+	unmount_all
+}
 
 if [ ! -e ${output_device} ]
 then
@@ -155,55 +198,105 @@ fi
 #	print_usage_exit
 #fi
 
+# downloading disk image file
+
+unmount_all
+
+linux_kernel_image=bone-ubuntu-16.04-console-armhf-2016-06-09-2gb.img.xz
+file_checksum=97df29fc24a87eff232dafd0bdf97711311fa28862fd1c5435dd87a049108861
+linux_kernel_image_full_path=${input_dir}/$linux_kernel_image
+linux_kernel_image_url="https://rcn-ee.com/rootfs/2016-06-09/microsd/${linux_kernel_image}"
+echo Downloading kernel image to $linux_kernel_image_full_path
+
+flush_cache
+
+if [ ! -e $linux_kernel_image_full_path ]
+then
+	echo kernel image not found.. downloading from $linux_kernel_image_url
+	wget $linux_kernel_image_url -O $linux_kernel_image_full_path
+fi
+if [ ! -e $linux_kernel_image_full_path ]
+then
+	echo Error downloading kernel image file. Please retry.
+	exit 0
+fi
+
+check_sum=$(sha256sum $linux_kernel_image_full_path | awk '{ print $1 }' )
+if [[ $check_sum == *"$file_checksum"* ]]
+then
+                        echo "Checksum ok!"
+else
+                        echo "Checksum error! please retry.. $file_checksum<>$check_sum"
+			rm $linux_kernel_image_full_path
+			exit 0
+fi
+
+echo "Done download successfully.. writing to disk: $output_device"
+flush_cache
 lsblk
-echo "About to repartition the block device: ${output_device}.."
-echo "Press CTRL+C to stop the operatin now."
+sleep 10
+
+	xzcat $linux_kernel_image_full_path | sudo dd of=${output_device}
+	echo  "xzcat $linux_kernel_image_full_path | sudo dd of=${output_device}"
+echo "Done writing to SDCard.. expanding.."
+flush_cache
+single_partition_expand
+	echo Done..
+sleep 10
+
+echo debug done
+flush_cache
+sleep 4
+lsblk
+#echo "About to repartition the block device: ${output_device}.."
+#echo "Press CTRL+C to stop the operatin now."
 
 sleep 10
 
-echo "Unmounting..."
+#echo "Unmounting..."
 output_device_p1=${output_device}1
-output_device_p2=${output_device}2
+#output_device_p2=${output_device}2
 if [[ "${output_device}" =~ "/dev/mmc" ]]
 then
 	output_device_p1=${output_device}p1
-	output_device_p2=${output_device}p2
+#	output_device_p2=${output_device}p2
 fi
 
-echo "SDCard partitions are at: $output_device_p1, and $output_device_p2."
+echo "SDCard partition is at: $output_device_p1"
 
 umount $output_device_p1 > /dev/zero
-umount $output_device_p2 > /dev/zero
+#umount $output_device_p2 > /dev/zero
+e2fsck -f "${output_device_p1}"
+resize2fs -f "${output_device_p1}"
+flush_cache
+#echo "Partitioning.."
+#dd if=/dev/zero of=${output_device} bs=1M count=16
+#blockdev --flushbufs ${output_device}
 
-echo "Partitioning.."
-dd if=/dev/zero of=${output_device} bs=1M count=16
-blockdev --flushbufs ${output_device}
+#LC_ALL=C sfdisk --force -uS --Linux "${output_device}" <<-__EOF__
+#1,,0xe,-
+#__EOF__
 
-LC_ALL=C sfdisk --force -uS --Linux "${output_device}" <<-__EOF__
-1,4194304,0xe,*
-,,,-
-__EOF__
+#blockdev --flushbufs ${output_device}
 
-blockdev --flushbufs ${output_device}
+#echo "Formating..."
+#mkfs.ext4 $output_device_p1 -L factory -F -F
+#if [ $? -gt 0 ]
+#then
+#	echo "Can't format ${output_device_p1}"
+#	print_usage_exit
+#fi
 
-echo "Formating..."
-mkfs.vfat $output_device_p1 -n factory
-if [ $? -gt 0 ]
-then
-	echo "Can't format ${output_device_p1}"
-	print_usage_exit
-fi
-
-mkfs.ext4 $output_device_p2 -L upgrade -F -F
-if [ $? -gt 0 ]
-then
-	echo "Can't format ${output_device_p2}"
-	print_usage_exit
-fi
+#mkfs.ext4 $output_device_p2 -L upgrade -F -F
+#if [ $? -gt 0 ]
+#then
+#	echo "Can't format ${output_device_p2}"
+#	print_usage_exit
+#fi
 
 sync
 
-lsblk
+#lsblk
 
 echo "Copying.."
 
@@ -218,24 +311,28 @@ then
 fi
 
 #echo "cp -r $input_dir/p1/* /tmp/copy_mount_point/"
-cp -r $input_dir/p1/am335x-boneblack.dtb /tmp/copy_mount_point/
-cp -r $input_dir/p1/* /tmp/copy_mount_point/
+#cp -r $input_dir/p1/am335x-boneblack.dtb /tmp/copy_mount_point/
+
+mkdir -p /tmp/copy_mount_point/factory/
+mkdir -p /tmp/copy_mount_point/upgrade/
+
+cp -r $input_dir/p1/* /tmp/copy_mount_point/factory/
 
 sync
-umount /tmp/copy_mount_point
-if [ $? -gt 0 ]
-then
-	echo "Can't unmount ${output_device_p1}"
-	print_usage_exit
-fi
+#umount /tmp/copy_mount_point
+#if [ $? -gt 0 ]
+#then
+#	echo "Can't unmount ${output_device_p1}"
+#	print_usage_exit
+#fi
 
-mount ${output_device_p2} /tmp/copy_mount_point
-if [ $? -gt 0 ]
-then
-	echo "Can't mount ${output_device_p2}"
-	print_usage_exit
-fi
-cp -r $input_dir/p2/* /tmp/copy_mount_point/
+#mount ${output_device_p2} /tmp/copy_mount_point
+#if [ $? -gt 0 ]
+#then
+#	echo "Can't mount ${output_device_p2}"
+#	print_usage_exit
+#fi
+cp -r $input_dir/p2/* /tmp/copy_mount_point/upgrade/
 sync
 umount /tmp/copy_mount_point
 if [ $? -gt 0 ]
@@ -243,8 +340,8 @@ then
 	echo "Can't unmount ${output_device_p2}"
 	print_usage_exit
 fi
-rm -r /tmp/copy_mount_point
 
+rm -r /tmp/copy_mount_point
 
 echo "All done.."
 
