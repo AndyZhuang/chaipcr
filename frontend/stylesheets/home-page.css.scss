@@ -317,6 +317,7 @@
             user-select: none;
           }
         }
+		
 
         .home-page-del-okay {
           width: 72px;
@@ -329,6 +330,85 @@
           background-repeat: no-repeat;
           float: left;
         }
+		
+		$height_image: 100%;
+        .home-page-del-okay-noimage {
+          width: 72px;
+          height: $height_image;
+          cursor: pointer;
+		  text-align:center;
+		  vertical-align: middle;
+          background-color: #c30506;
+          background-position: center;
+          //background-image: url("/images/ok.svg");
+          background-size: 26px 28px;
+          background-repeat: no-repeat;
+          float: left;
+        }
+		
+		.loader,
+		.loader:before,
+		.loader:after {
+		  background: #ffffff;
+		  -webkit-animation: load1 1s infinite ease-in-out;
+		  animation: load1 1s infinite ease-in-out;
+		  width: 1em;
+		  height: 4em;
+		}
+		.loader:before,
+		.loader:after {
+		  position: absolute;
+		  top: 0;
+		  content: '';
+		}
+		.loader:before {
+		  left: -1.5em;
+		  -webkit-animation-delay: -0.32s;
+		  animation-delay: -0.32s;
+		}
+		.loader {
+		  color: #ffffff;
+		  //text-indent: -9999em;
+		  //vertical-align:top;
+		  display:inline-block;
+		  margin: $height_image/2;
+		  //position: center;
+		  font-size: 5px;
+		  -webkit-transform: translateZ(0);
+		  -ms-transform: translateZ(0);
+		  transform: translateZ(0);
+		  -webkit-animation-delay: -0.16s;
+		  animation-delay: -0.16s;
+		}
+		.loader:after {
+		  left: 1.5em;
+		}
+		@-webkit-keyframes load1 {
+		  0%,
+		  80%,
+		  100% {
+		    box-shadow: 0 0;
+		    height: 4em;
+		  }
+		  40% {
+		    box-shadow: 0 -2em;
+		    height: 5em;
+		  }
+		}
+		@keyframes load1 {
+		  0%,
+		  80%,
+		  100% {
+		    box-shadow: 0 0;
+		    height: 4em;
+		  }
+		  40% {
+		    box-shadow: 0 -2em;
+		    height: 5em;
+		  }
+		}
+		
+		
         &.ng-hide {
           left: 352px;
           transition: left .3s;

@@ -34,6 +34,7 @@ window.ChaiBioTech.ngApp.directive('deleteMode', [
 
         scope.deleteClicked = false;
         scope.running = false;
+		scope.deleting = false
 
         var identifierClass = 'home-page-active-del-identifier';
 
@@ -77,7 +78,12 @@ window.ChaiBioTech.ngApp.directive('deleteMode', [
         };
 
         scope.tryDeletion = function() {
+			scope.deleting = true;
+			debugger;
+			scope.deleteClicked = true;
+			//scope.deleting = true;
           scope.deleteExp(scope.experiment);
+		  //scope.deleting = false;
         };
 
       }
