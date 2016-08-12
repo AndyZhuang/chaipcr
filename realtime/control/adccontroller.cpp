@@ -74,13 +74,13 @@ void ADCController::process() {
             if (!_workState)
                 break;
 
-            /*if (ExperimentController::getInstance()->machineState() == ExperimentController::IdleMachineState) {
+            if (ExperimentController::getInstance()->machineState() == ExperimentController::IdleMachineState) {
                 timespec time;
                 time.tv_sec = 0;
                 time.tv_nsec = 5 * 1000 * 1000;
 
                 nanosleep(&time, nullptr);
-            }*/
+            }
 
             std::size_t channel = 0;
             ADCState nextState = calcNextState(channel);

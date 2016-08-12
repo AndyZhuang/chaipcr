@@ -33,6 +33,8 @@ BusyPin::BusyPin()
 
         throw;
     }
+
+    wait();
 }
 
 BusyPin::~BusyPin()
