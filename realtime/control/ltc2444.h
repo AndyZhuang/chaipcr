@@ -22,6 +22,10 @@
 #include "spi.h"
 #include "gpio.h"
 
+#include <memory>
+
+class BusyPin;
+
 // Class LTC2444
 class LTC2444  // will work with this class later
 {
@@ -53,8 +57,10 @@ public:
 private:
     GPIO csPin_;
     SPIPort spiPort_;
-	GPIO busyPin_;
+    //GPIO busyPin_;
 	uint8_t OSRTWOx;
+
+    std::shared_ptr<BusyPin> _busyPin;
 };
 
 #endif

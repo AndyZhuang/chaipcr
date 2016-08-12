@@ -22,13 +22,17 @@
 #include "pcrincludes.h"
 #include "ltc2444.h"
 #include "logger.h"
+#include "busypin.h"
 
 ////////////////////////////////////////////////////////////////////////////////
 // Class LTC2444
 LTC2444::LTC2444(unsigned int csPinNumber, SPIPort spiPort, unsigned int busyPinNumber) :
      csPin_(csPinNumber, GPIO::kOutput),
-	 spiPort_ (spiPort),
-     busyPin_ (busyPinNumber, GPIO::kInput, GPIO::kPoll){}
+     spiPort_ (spiPort)/*,
+     busyPin_ (busyPinNumber, GPIO::kInput, GPIO::kPoll)*/ {
+
+    _busyPin = BusyPinInstance::createInstance();
+}
 
 LTC2444::~LTC2444() {
 }
@@ -84,25 +88,14 @@ int32_t LTC2444::readADC(uint8_t ch, bool SGL, bool lowerChannelPositive, Oversa
         conversion = sign_extend | (((((uint32_t)dataIn[0])<<24|((uint32_t)dataIn[1])<<16|((uint32_t)dataIn[2])<<8|dataIn[3])&0x1FFFFFE0)>>5);
     	
     }
+
     return conversion;
 }
 
 bool LTC2444::waitBusy() {
-    try
-    {
-        GPIO::Value value = GPIO::kLow;
-
-        if (busyPin_.pollValue(GPIO::kLow, value))
-            return value == GPIO::kHigh;
-    }
-    catch (const std::exception &ex)
-    {
-        APP_LOGGER << "LTC2444::waitBusy - exception: " << ex.what() << std::endl;
-    }
-
-    return false;
+    return _busyPin->wait();
 }
 
 void LTC2444::stopWaitinigBusy() {
-    busyPin_.cancelPolling();
+    _busyPin->cancel();
 }

@@ -36,6 +36,9 @@ LIBS += -lsoci_mysql
 LIBS += -lboost_system
 LIBS += -lboost_chrono
 
+#PRU
+LIBS += -lprussdrv
+
 LIBS += -ldl
 LIBS += -lrt
 
@@ -141,7 +144,8 @@ HEADERS += \
     server/updatehandler.h \
     server/datahandler.h \
     server/updateuploadhandler.h \
-    util/logger.h
+    util/logger.h \
+    util/busypin.h
 
 SOURCES += \
     app/pins.cpp \
@@ -195,4 +199,5 @@ SOURCES += \
     server/updatehandler.cpp \
     server/datahandler.cpp \
     server/updateuploadhandler.cpp \
-    util/logger.cpp
+    util/logger.cpp \
+    util/busypin.cpp

@@ -157,4 +157,8 @@ const std::string kNetworkInterfacesFile = "/etc/network/interfaces";
 //Time checker
 const std::string kSavedTimePath = "/data/chaipcr_saved_time";
 
+//Busy pin
+const int kBusyPinPruNumber = 0;
+const std::string kBusyPinPruBinary = "/root/chaipcr/chai-pru.bin";
+
 #endif
