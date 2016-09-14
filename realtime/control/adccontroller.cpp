@@ -36,12 +36,15 @@ const LTC2444::OversamplingRatio kLIAOversamplingRate = LTC2444::kOversamplingRa
 ////////////////////////////////////////////////////////////////////////////////
 // Class ADCController
 ADCController::ADCController(ConsumersList &&consumers, unsigned int csPinNumber, SPIPort &&spiPort, unsigned int busyPinNumber):
-    _consumers(std::move(consumers)) {
+    _consumers(std::move(consumers)),
+    _errorPin(68, GPIO::kOutput) {
     _currentConversionState = static_cast<ADCState>(0);
     _currentChannel = 0;
     _workState = false;
 
     _ltc2444 = new LTC2444(csPinNumber, std::move(spiPort), busyPinNumber);
+
+    resetErrorPin();
 }
 
 ADCController::~ADCController() {
@@ -141,6 +144,8 @@ void ADCController::process() {
                     _consumers[_currentConversionState]->setADCValue(value, _currentChannel);
             }
             catch (const TemperatureLimitError &ex) {
+                _errorPin.setValue(GPIO::kLow);
+
                 logStream << "ADCController::process - consumer exception: " << ex.what() << std::endl;
 
                 qpcrApp.stopExperiment(ex.what());
@@ -165,6 +170,10 @@ void ADCController::process() {
 void ADCController::stop() {
     _workState = false;
     _ltc2444->stopWaitinigBusy();
+}
+
+void ADCController::resetErrorPin() {
+    _errorPin.setValue(GPIO::kHigh);
 }
 
 ADCController::ADCState ADCController::calcNextState(size_t &nextChannel) const {

@@ -22,6 +22,7 @@
 #include "icontrol.h"
 #include "spi.h"
 #include "lockfreesignal.h"
+#include "gpio.h"
 
 #include <vector>
 #include <memory>
@@ -53,6 +54,8 @@ public:
 
     boost::signals2::lockfree_signal<void()> loopStarted;
 
+    void resetErrorPin();
+
 protected:
     ADCState calcNextState(std::size_t &nextChannel) const;
 	
@@ -70,6 +73,8 @@ protected:
     std::vector<std::shared_ptr<ADCConsumer>> _zoneConsumers;
     std::shared_ptr<ADCConsumer> _liaConsumer;
     std::shared_ptr<ADCConsumer> _lidConsumer;
+
+    GPIO _errorPin;
 };
 
 #endif
