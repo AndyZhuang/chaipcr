@@ -18,9 +18,10 @@
         this.offset = 60
       })
 
-      spyOn(this.WindowWrapper, 'height').and.callFake(function () {
+      spyOn(this.WindowWrapper, 'height').and.callFake(function() {
         return windowHeight
       })
+
       this.directive = this.$compile(angular.element('<div min-height offset="' + this.offset + '"></div>'))(this.scope)
 
     })
@@ -30,11 +31,14 @@
     })
 
     it('should reset on window.resize', function() {
-      // spyOn(this.WindowWrapper, 'height').and.returnValue(2000)
       windowHeight = 2000
       angular.element(this.$window).triggerHandler('resize')
       this.scope.$digest()
       expect(this.directive.css('minHeight').replace('px', '') * 1).toBe(2000 - this.offset)
+    })
+
+    afterEach(function() {
+      $(window).off('resize')
     })
 
   })

@@ -31,7 +31,13 @@
     })
 
     it('rotates viewport when portrait', function() {
+      spyOn(this.$rootScope, '$broadcast')
+      this.directive = this.$compile(angular.element('<div landscape></div>'))(this.scope)
+      this.scope.$digest()
       expect(this.directive.hasClass('landscape')).toBe(true)
+      expect(this.$rootScope.$broadcast).toHaveBeenCalledWith('window:resize')
+      expect(this.$rootScope.$broadcast).toHaveBeenCalledTimes(1)
+      expect(this.directive.width()).toBe(this.WindowWrapper.width())
     })
 
     it('should not rotate the view when landscape', function() {

@@ -7,16 +7,38 @@
     'IsMobile',
     function windowCommon($window, $rootScope, IsMobile) {
 
+      var self = this;
+
       this.width = function() {
-        if (IsMobile()) {
-          return $window.innerWidth;
+        if (self.isLandscape()) {
+          if (IsMobile()) {
+            return $window.innerWidth;
+          } else {
+            return angular.element($window).width();
+          }
         } else {
-          return $($window).width();
+          if (IsMobile()) {
+            return $window.innerHeight;
+          } else {
+            return angular.element($window).height();
+          }
         }
       };
 
       this.height = function() {
-        return angular.element($window).height();
+        if (self.isLandscape()) {
+          if (IsMobile()) {
+            return $window.innerHeight;
+          } else {
+            return angular.element($window).height();
+          }
+        } else {
+          if (IsMobile()) {
+            return $window.innerWidth;
+          } else {
+            return angular.element($window).width();
+          }
+        }
       };
 
       this.documentHeight = function() {
@@ -35,11 +57,9 @@
         return orientation.type;
       };
 
-      this.isLandscape = (function (_this) {
-        return function() {
-          return _this.orientation().indexOf('landscape') > -1;
-        };
-      })(this);
+      this.isLandscape = function() {
+        return self.orientation().indexOf('landscape') > -1;
+      };
 
       angular.element($window).resize(function() {
         $rootScope.$apply(function() {

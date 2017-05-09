@@ -6,18 +6,22 @@
     describe('On Mobile', function() {
 
       var windowMock = {
-        navigator: {
-          userAgent: 'Mozilla/5.0 (iPad; CPU OS 8_0_2 like Mac OS X)\
-                      AppleWebKit/60.1.4 (KHTML, like Gecko) Version/8.0\
-                      Mobile/12A405 Safari/600.1.4'
-        },
-        innerWidth: 200
+        innerWidth: 200,
+        innerHeight: 400,
+        screen: {
+          orientation: {
+            type: 'landscape-primary'
+          }
+        }
       }
 
       beforeEach(function() {
         module('ChaiBioTech', function($provide) {
           mockCommonServices($provide)
           $provide.value('$window', windowMock)
+          $provide.value('IsMobile', function() {
+            return true
+          })
         })
 
         inject(function($injector) {
@@ -27,6 +31,10 @@
 
       it('should return width of mobile browser window', function() {
         expect(this.WindowWrapper.width()).toEqual(windowMock.innerWidth)
+      })
+
+      it('should return height of mobile browser window', function() {
+        expect(this.WindowWrapper.height()).toEqual(windowMock.innerHeight)
       })
 
       describe('View Orientation Detection', function() {
@@ -61,6 +69,21 @@
           expect(this.WindowWrapper.isLandscape()).toBe(false)
         })
 
+        it('should swap width and height measurements when portrait', function() {
+          var isLandscape = true
+          spyOn(this.WindowWrapper, 'isLandscape').and.callFake(function() {
+            return isLandscape
+          })
+          spyOn($.fn, 'height').and.callFake(function () {
+            return 500
+          })
+          var oldWidth = this.WindowWrapper.width()
+          var oldHeight = this.WindowWrapper.height()
+          isLandscape = false
+          expect(this.WindowWrapper.width()).toBe(oldHeight)
+          expect(this.WindowWrapper.height()).toBe(oldWidth)
+        })
+
       })
 
     })
@@ -77,6 +100,11 @@
           this.$window = $injector.get('$window')
           this.WindowWrapper = $injector.get('WindowWrapper')
         })
+
+        spyOn(this.WindowWrapper, 'isLandscape').and.callFake(function() {
+          return true
+        })
+
       })
 
       it('should return width of desktop browser window', function() {
