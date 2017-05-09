@@ -29,6 +29,40 @@
         expect(this.WindowWrapper.width()).toEqual(windowMock.innerWidth)
       })
 
+      describe('View Orientation Detection', function() {
+
+        beforeEach(function() {
+          windowMock.screen = windowMock.screen || {}
+        })
+
+        it('should return orientation', function() {
+          windowMock.screen.orientation = {
+            type: 'landscape-primary'
+          }
+          expect(this.WindowWrapper.orientation()).toBe('landscape-primary')
+        })
+
+        it('should detect window orientation', function() {
+          windowMock.screen.orientation = {
+            type: 'landscape-primary'
+          }
+          expect(this.WindowWrapper.isLandscape()).toBe(true)
+          windowMock.screen.orientation = {
+            type: 'landscape-secondary'
+          }
+          expect(this.WindowWrapper.isLandscape()).toBe(true)
+          windowMock.screen.orientation = {
+            type: 'portrait-primary'
+          }
+          expect(this.WindowWrapper.isLandscape()).toBe(false)
+          windowMock.screen.orientation = {
+            type: 'portrait-secondary'
+          }
+          expect(this.WindowWrapper.isLandscape()).toBe(false)
+        })
+
+      })
+
     })
 
     describe('On Desktop', function() {
@@ -49,25 +83,29 @@
         expect(this.WindowWrapper.width()).toEqual($(this.$window).width())
       })
 
-      it('should return window height', function () {
+      it('should return window height', function() {
         expect(this.WindowWrapper.height()).toBe(angular.element(this.$window).height())
       })
 
-      it('should return document height', function () {
-        angular.element('body').css({margin: 0, padding: 0}).append('<div style="height: 1234px"></div>')
+      it('should return document height', function() {
+        angular.element('body').css({ margin: 0, padding: 0 }).append('<div style="height: 1234px"></div>')
         expect(this.WindowWrapper.documentHeight()).toBe(1234)
       })
 
-      it('should broadcast window:resize event', function () {
-        spyOn(this.$rootScope, '$apply').and.callFake(function (fn) {
+      it('should broadcast window:resize event', function() {
+        spyOn(this.$rootScope, '$apply').and.callFake(function(fn) {
           fn()
         })
-        spyOn(this.$rootScope, '$broadcast')
+        spyOn(this.$rootScope, '$broadcast').and.callFake(function() {})
         angular.element(this.$window).triggerHandler('resize')
         expect(this.$rootScope.$broadcast).toHaveBeenCalledWith('window:resize')
         expect(this.$rootScope.$broadcast).toHaveBeenCalledTimes(1)
       })
 
+    })
+
+    afterEach(function() {
+      $(window).off('resize')
     })
 
   })

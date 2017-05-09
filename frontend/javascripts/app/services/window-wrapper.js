@@ -30,8 +30,19 @@
         return height;
       };
 
+      this.orientation = function() {
+        var orientation = $window.screen.orientation || $window.screen.mozOrientation || $window.screen.msOrientation;
+        return orientation.type;
+      };
+
+      this.isLandscape = (function (_this) {
+        return function() {
+          return _this.orientation().indexOf('landscape') > -1;
+        };
+      })(this);
+
       angular.element($window).resize(function() {
-        $rootScope.$apply(function () {
+        $rootScope.$apply(function() {
           $rootScope.$broadcast('window:resize');
         });
       });
