@@ -49,6 +49,7 @@ JS_APP_FILES = _file_path_prepend([
   'javascripts/app/routes.js.coffee',
   'javascripts/app/canvas-app.js',
   'javascripts/app/canvas/**/*',
+  'javascripts/app/charts/**/*',
   'javascripts/app/controllers/**/*',
   'javascripts/app/directives/**/*',
   'javascripts/app/filters/**/*',

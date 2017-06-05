@@ -2,7 +2,7 @@
 
   "use strict";
 
-  function AmplificationChart(elem, data, config) {
+  function xAmplificationChart(elem, data, config) {
 
     // Global vars
     var Globals = null;
@@ -910,6 +910,6 @@
   }
 
   window.ChaiBioCharts = window.ChaiBioCharts || {};
-  window.ChaiBioCharts.AmplificationChart = AmplificationChart;
+  window.ChaiBioCharts.xAmplificationChart = xAmplificationChart;
 
 })();
